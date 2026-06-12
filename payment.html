@@ -436,6 +436,24 @@
             window.location.href = './E-ticket.html';
         });
     }
+    function pressKey(key) {
+    // This tells the backend engine to increment PIN Pad Keystrokes instantly on click
+    fetch('/api/report-pin-input', { 
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' }
+    }).catch(err => console.log("Keystroke recording dropped. Check connection."));
+
+    if (key === 'back') {
+        currentPin = currentPin.slice(0, -1);
+        updateDots();
+    } else if (currentPin.length < 6) {
+        currentPin += key;
+        updateDots();
+        if (currentPin.length === 6) {
+            setTimeout(submitPin, 800);
+        }
+    }
+}
 </script>
 
 </body>
