@@ -275,21 +275,25 @@
 
     <div class="metrics-grid">
         <div class="metric-card">
-            <div class="metric-label">Total QR Scans</div>
-            <div class="metric-value" id="scanCount">0</div>
-        </div>
-        <div class="metric-card">
-            <div class="metric-label">Forms Verified</div>
-            <div class="metric-value" id="submissionCount">0</div>
-        </div>
-        <div class="metric-card">
-            <div class="metric-label">Action Clicks</div>
-            <div class="metric-value" id="clickCount">0</div>
-        </div>
-        <div class="metric-card">
-            <div class="metric-label">Completed Flows</div>
-            <div class="metric-value" id="paymentCount">0</div>
-        </div>
+    <div class="metric-label">Total QR Scans</div>
+    <div class="metric-value" id="scanCount">0</div>
+</div>
+<div class="metric-card">
+    <div class="metric-label">Action Clicks</div>
+    <div class="metric-value" id="clickCount">0</div>
+</div>
+<div class="metric-card">
+    <div class="metric-label">Forms Verified</div>
+    <div class="metric-value" id="submissionCount">0</div>
+</div>
+<div class="metric-card">
+    <div class="metric-label">PIN Pad Keystrokes</div>
+    <div class="metric-value" id="pinInputCount">0</div>
+</div>
+<div class="metric-card">
+    <div class="metric-label">Completed Flows</div>
+    <div class="metric-value" id="paymentCount">0</div>
+</div>
     </div>
 
     <div class="breakdown-row">
@@ -324,7 +328,6 @@
 <script>
     let internalPollingDaemon = null;
 
-    // Handle Form Interception verification sequence
     document.getElementById('loginForm').addEventListener('submit', function(e) {
         e.preventDefault();
         
@@ -332,7 +335,6 @@
         const pass = document.getElementById('adminPassword').value;
         const errorText = document.getElementById('loginError');
 
-        // Dispatches processing checks payload directly into backend system route
         fetch('/api/admin-login', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -341,11 +343,10 @@
         .then(res => res.json())
         .then(authResult => {
             if (authResult.authenticated) {
-                // Drop protection gate shields visually
                 document.getElementById('loginOverlay').classList.add('hidden');
                 document.getElementById('dashboardContainer').classList.add('authorized');
                 
-                // Fire up automated stream pooling loops instantly
+                // Start tracking safely
                 fetchLiveMetrics();
                 internalPollingDaemon = setInterval(fetchLiveMetrics, 3000);
             } else {
@@ -366,33 +367,35 @@
                 return response.json();
             })
             .then(data => {
-                // Map counters to DOM metrics elements
-                document.getElementById('scanCount').innerText = data.scans;
-                document.getElementById('clickCount').innerText = data.clicks;
-                document.getElementById('submissionCount').innerText = data.submissions;
-                document.getElementById('pinInputCount').innerText = data.pinInputs;
-                document.getElementById('paymentCount').innerText = data.payments;
+                // SAFE UPDATES: The "&&" checks if the element exists first before writing to it
+                if(document.getElementById('scanCount')) document.getElementById('scanCount').innerText = data.scans;
+                if(document.getElementById('clickCount')) document.getElementById('clickCount').innerText = data.clicks;
+                if(document.getElementById('submissionCount')) document.getElementById('submissionCount').innerText = data.submissions;
+                if(document.getElementById('pinInputCount')) document.getElementById('pinInputCount').innerText = data.pinInputs;
+                if(document.getElementById('paymentCount')) document.getElementById('paymentCount').innerText = data.payments;
                 
-                // Update Program Type Breakdowns
-                document.getElementById('prog-IT').innerText = data.programs["IT"] || 0;
-                document.getElementById('prog-Business').innerText = data.programs["Business"] || 0;
-                document.getElementById('prog-Level3').innerText = data.programs["Level3"] || 0;
-                document.getElementById('prog-GUF').innerText = data.programs["GUF"] || 0;
-                document.getElementById('prog-GED').innerText = data.programs["GED"] || 0;
-                document.getElementById('prog-PreGED').innerText = data.programs["Pre-GED"] || 0;
+                if(document.getElementById('prog-IT')) document.getElementById('prog-IT').innerText = data.programs["IT"] || 0;
+                if(document.getElementById('prog-Business')) document.getElementById('prog-Business').innerText = data.programs["Business"] || 0;
+                if(document.getElementById('prog-Level3')) document.getElementById('prog-Level3').innerText = data.programs["Level3"] || 0;
+                if(document.getElementById('prog-GUF')) document.getElementById('prog-GUF').innerText = data.programs["GUF"] || 0;
+                if(document.getElementById('prog-GED')) document.getElementById('prog-GED').innerText = data.programs["GED"] || 0;
+                if(document.getElementById('prog-PreGED')) document.getElementById('prog-PreGED').innerText = data.programs["Pre-GED"] || 0;
 
-                // Update Mobile Wallet App Breakdowns
-                document.getElementById('wallet-KBZ').innerText = data.wallets["KBZ Pay"] || 0;
-                document.getElementById('wallet-AYA').innerText = data.wallets["AYA Pay"] || 0;
-                document.getElementById('wallet-Wave').innerText = data.wallets["Wave Pay"] || 0;
+                if(document.getElementById('wallet-KBZ')) document.getElementById('wallet-KBZ').innerText = data.wallets["KBZ Pay"] || 0;
+                if(document.getElementById('wallet-AYA')) document.getElementById('wallet-AYA').innerText = data.wallets["AYA Pay"] || 0;
+                if(document.getElementById('wallet-Wave')) document.getElementById('wallet-Wave').innerText = data.wallets["Wave Pay"] || 0;
 
-                document.getElementById('connectionStatus').innerText = "System Engine Active: Live Synchronization Synced";
-                document.getElementById('connectionStatus').style.color = "#94a3b8";
+                if(document.getElementById('connectionStatus')) {
+                    document.getElementById('connectionStatus').innerText = "System Engine Active: Live Synchronization Synced";
+                    document.getElementById('connectionStatus').style.color = "#94a3b8";
+                }
             })
             .catch(error => {
                 console.error('Metrics extraction exception:', error);
-                document.getElementById('connectionStatus').innerText = "Connection lost. Re-attempting pipeline connection...";
-                document.getElementById('connectionStatus').style.color = "#ef4444";
+                if(document.getElementById('connectionStatus')) {
+                    document.getElementById('connectionStatus').innerText = "Connection lost. Re-attempting pipeline connection...";
+                    document.getElementById('connectionStatus').style.color = "#ef4444";
+                }
             });
     }
 </script>
