@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GUSTO Secure Payment Gateway</title>
+    <style>
+        :root {
+            --primary-color: #1e3a8a;
+            --primary-hover: #1d4ed8;
+            --bg-overlay: rgba(15, 23, 42, 0.4);
+            --card-bg: #ffffff;
+            --text-main: #334155;
+            --text-muted: #64748b;
+            --border-color: #cbd5e1;
+        }
+
+        body { 
+            font-family: 'Segoe UI', Arial, sans-serif; 
+            background: #f4f6f9; 
+            margin: 0;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* Background underlay to look like the main site faded away */
+        .underlay-bg {
+            position: absolute;
+            width: 100%;
+            max-width: 400px;
+            padding: 30px;
+            text-align: center;
+            opacity: 0.15;
+            filter: blur(2px);
+            pointer-events: none;
+        }
+
+        .gateway-overlay {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: var(--bg-overlay);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 999;
+        }
+
+        .gateway-modal { 
+            background: var(--card-bg); 
+            padding: 24px; 
+            border-radius: 16px; 
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            width: 90%; 
+            max-width: 360px; 
+            text-align: center; 
+            box-sizing: border-box;
+        }
+
+        /* Screen States - Hidden by default unless active */
+        .gateway-screen {
+            display: none;
+            animation: fadeIn 0.3s ease-in-out;
+        }
+
+        .gateway-screen.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: scale(0.98); }
+            to { opacity: 1; transform: scale(1); }
+        }
+
+        /* Shared Components */
+        .merchant-header {
+            border-bottom: 1px solid #e2e8f0;
+            padding-bottom: 12px;
+            margin-bottom: 16px;
+        }
+        .merchant-name { font-weight: 600; color: #0f172a; margin: 0; font-size: 14px; }
+        .amount-due { font-size: 22px; font-weight: 700; color: var(--primary-color); margin: 6px 0 0 0; }
+
+        /* Step 1: App Selection Grid */
+        .apps-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+            margin-top: 15px;
+        }
+        .app-option {
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 12px 8px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 600;
+            transition: all 0.2s;
+            background: #fff;
+        }
+        .app-option:hover {
+            border-color: var(--primary-color);
+            background: #f8fafc;
+        }
+
+        /* Step 2: Form Controls */
+        .form-group { text-align: left; margin-bottom: 16px; }
+        label { display: block; font-size: 12px; font-weight: 600; color: var(--text-main); margin-bottom: 6px; }
+        .input-field {
+            width: 100%; padding: 12px; border: 1px solid var(--border-color);
+            border-radius: 6px; font-size: 14px; box-sizing: border-box;
+        }
+        .btn-action {
+            width: 100%; padding: 12px; background: var(--primary-color); color: white;
+            border: none; border-radius: 6px; font-size: 14px; font-weight: 600; cursor: pointer;
+        }
+
+        /* Step 3 & 4: Loading Frameworks */
+        .spinner {
+            width: 32px; height: 32px;
+            border: 3px solid #e2e8f0; border-top: 3px solid var(--primary-color);
+            border-radius: 50%; margin: 20px auto;
+            animation: spin 0.8s linear infinite;
+        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+        /* ==================== STEP 5: YOUR PIN MODAL CSS ==================== */
+        .pin-modal-body {
+            text-align: center;
+        }
+        .modal-header-custom {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            color: var(--text-main);
+            font-weight: 600;
+            font-size: 15px;
+        }
+        .close-btn {
+            background: none;
+            border: none;
+            font-size: 16px;
+            cursor: pointer;
+            color: var(--text-muted);
+            padding: 0;
+            width: 22px;
+            text-align: left;
+        }
+        .recipient-title {
+            font-size: 13px;
+            color: var(--text-muted);
+            margin-bottom: 5px;
+        }
+        .amount-display {
+            font-size: 26px;
+            font-weight: 700;
+            color: #0f172a;
+            margin-bottom: 20px;
+        }
+        .amount-unit {
+            font-size: 16px;
+            margin-left: 2px;
+        }
+        .pin-dots-container {
+            display: flex;
+            justify-content: center;
+            gap: 12px;
+            margin-bottom: 25px;
+        }
+        .pin-dot-slot {
+            width: 14px;
+            height: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .dot-indicator {
+            width: 10px;
+            height: 10px;
+            border: 2px solid var(--border-color);
+            border-radius: 50%;
+            transition: all 0.1s;
+        }
+        .dot-indicator.active {
+            background-color: #0f172a;
+            border-color: #0f172a;
+            transform: scale(1.1);
+        }
+        .numpad-container {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            max-width: 280px;
+            margin: 0 auto;
+        }
+        .numpad-row {
+            display: flex;
+            justify-content: space-between;
+            gap: 10px;
+        }
+        .numpad-btn {
+            flex: 1;
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            padding: 12px 0;
+            font-size: 18px;
+            font-weight: 600;
+            border-radius: 8px;
+            cursor: pointer;
+            user-select: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 24px;
+        }
+        .numpad-btn:active {
+            background: #cbd5e1;
+        }
+        .numpad-btn.empty-action {
+            background: transparent;
+            border-color: transparent;
+            cursor: default;
+        }
+        .backspace-icon {
+            width: 20px;
+            height: 20px;
+            color: var(--text-main);
+        }
+    </style>
+</head>
+<body>
+
+<div class="underlay-bg">
+    <h2>Rainy Day Desk Delivery</h2>
+    <p>Processing order request pipeline configuration parameters...</p>
+</div>
+
+<div class="gateway-overlay">
+    <div class="gateway-modal">
+        
+        <div class="merchant-header" id="globalMerchantHeader">
+            <p class="merchant-name">You've ordered the item!</p>
+            <p class="amount-due">3,000 Ks</p>
+        </div>
+
+        <div id="screenAppSelect" class="gateway-screen active">
+            <label style="text-align: center; margin-bottom: 12px;">Select Payment Mobile Wallet</label>
+            <div class="apps-grid">
+                <div class="app-option" onclick="goToPhoneForm('KBZ Pay')">KBZ Pay</div>
+                <div class="app-option" onclick="goToPhoneForm('AYA Pay')">AYA Pay</div>
+                <div class="app-option" onclick="goToPhoneForm('Wave Pay')">Wave Pay</div>
+            </div>
+        </div>
+
+        <div id="screenPhoneInput" class="gateway-screen">
+            <div class="form-group">
+                <label id="phoneLabel" for="userPhone">Wallet Mobile Number</label>
+                <input type="text" id="userPhone" class="input-field" placeholder="09xxxxxxxxx" autocomplete="off">
+            </div>
+            <button class="btn-action" onclick="triggerRedirectPopup()">Proceed to checkout</button>
+        </div>
+
+        <div id="screenRedirect" class="gateway-screen">
+            <div class="spinner"></div>
+            <p style="font-size: 13px; color: var(--text-main); font-weight: 600;" id="redirectText">
+                Connecting to secure wallet app ecosystem...
+            </p>
+            <p style="font-size: 11px; color: var(--text-muted); margin-top: 4px;">
+                Please do not close your browser viewport.
+            </p>
+        </div>
+
+        <div id="screenInterfaceLoad" class="gateway-screen">
+            <div class="spinner" style="border-top-color: #64748b;"></div>
+            <p style="font-size: 13px; color: var(--text-muted);">Syncing authentication framework parameters...</p>
+        </div>
+
+        <div id="screenPinPad" class="gateway-screen">
+            <div class="pin-modal" id="pinModal">
+                <div class="pin-modal-body">
+                    <div class="modal-header-custom">
+                        <button class="close-btn" onclick="closePinPad()">✕</button>
+                        <span>Enter PIN</span>
+                        <div style="width: 22px;"></div>
+                    </div>
+
+                    <div class="recipient-title" id="dynamicRecipient">Transfer To Coffee Bean (Juction Square)</div>
+                    <div class="amount-display">3,000.00<span class="amount-unit">Ks</span></div>
+                    
+                    <div class="pin-dots-container">
+                        <div class="pin-dot-slot"><div class="dot-indicator" id="dot-0"></div></div>
+                        <div class="pin-dot-slot"><div class="dot-indicator" id="dot-1"></div></div>
+                        <div class="pin-dot-slot"><div class="dot-indicator" id="dot-2"></div></div>
+                        <div class="pin-dot-slot"><div class="dot-indicator" id="dot-3"></div></div>
+                        <div class="pin-dot-slot"><div class="dot-indicator" id="dot-4"></div></div>
+                        <div class="pin-dot-slot"><div class="dot-indicator" id="dot-5"></div></div>
+                    </div>
+                </div>
+
+                <div class="numpad-container">
+                    <div class="numpad-row">
+                        <div class="numpad-btn" onclick="pressKey('1')">1</div>
+                        <div class="numpad-btn" onclick="pressKey('2')">2</div>
+                        <div class="numpad-btn" onclick="pressKey('3')">3</div>
+                    </div>
+                    <div class="numpad-row">
+                        <div class="numpad-btn" onclick="pressKey('4')">4</div>
+                        <div class="numpad-btn" onclick="pressKey('5')">5</div>
+                        <div class="numpad-btn" onclick="pressKey('6')">6</div>
+                    </div>
+                    <div class="numpad-row">
+                        <div class="numpad-btn" onclick="pressKey('7')">7</div>
+                        <div class="numpad-btn" onclick="pressKey('8')">8</div>
+                        <div class="numpad-btn" onclick="pressKey('9')">9</div>
+                    </div>
+                    <div class="numpad-row">
+                        <div class="numpad-btn empty-action"></div>
+                        <div class="numpad-btn" onclick="pressKey('0')">0</div>
+                        <div class="numpad-btn" onclick="pressBackspace()">
+                            <svg class="backspace-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M21 4H8l-7 8 7 8h13a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2z"/>
+                                <line x1="18" y1="9" x2="12" y2="15"/>
+                                <line x1="12" y1="9" x2="18" y2="15"/>
+                            </svg>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+<script>
+    let currentSelectedWallet = "";
+    let currentPin = "";
+
+    // Transition Helper
+    function changeScreen(currentId, nextId) {
+        document.getElementById(currentId).classList.remove('active');
+        document.getElementById(nextId).classList.add('active');
+    }
+
+    // Step 1 -> Step 2
+    function goToPhoneForm(walletName) {
+        currentSelectedWallet = walletName;
+        document.getElementById('phoneLabel').innerText = walletName + " Mobile Number";
+        // Dynamically adjust PIN labels to look authentic based on selections
+        document.getElementById('dynamicRecipient').innerText = "Transfer To Coffee Bean (Junction Square) via " + walletName ;
+        changeScreen('screenAppSelect', 'screenPhoneInput');
+    }
+
+    // Step 2 -> Step 3 (Runs for exactly 2.5 seconds)
+    function triggerRedirectPopup() {
+        const phoneInput = document.getElementById('userPhone').value;
+        if (!phoneInput) {
+            alert("Please enter your mobile number to establish a connection path.");
+            return;
+        }
+        
+        document.getElementById('redirectText').innerText = "Processing secure checkout via " + currentSelectedWallet + " Application...";
+        changeScreen('screenPhoneInput', 'screenRedirect');
+
+        setTimeout(() => {
+            // Step 3 -> Step 4
+            changeScreen('screenRedirect', 'screenInterfaceLoad');
+            
+            // Step 4 -> Step 5 (Runs loading frame for 1.5 seconds)
+            setTimeout(() => {
+                // Hide global merchant header block to allow your custom modal header to cleanly manage layout space
+                document.getElementById('globalMerchantHeader').style.display = 'none';
+                changeScreen('screenInterfaceLoad', 'screenPinPad');
+            }, 1500);
+
+        }, 2500); 
+    }
+
+    // Custom Input Management Hooks for your specific IDs
+    function pressKey(num) {
+        if (currentPin.length < 6) {
+            currentPin += num;
+            updateDots();
+            
+            // AUTOMATIC COMPLETION: Once 6 digits are hit, automatically execute redirection routing
+            if (currentPin.length === 6) {
+                setTimeout(submitPin, 300);
+            }
+        }
+    }
+
+    function pressBackspace() {
+        if (currentPin.length > 0) {
+            currentPin = currentPin.slice(0, -1);
+            updateDots();
+        }
+    }
+
+    function updateDots() {
+        for (let i = 0; i < 6; i++) {
+            const dot = document.getElementById(`dot-${i}`);
+            if (i < currentPin.length) {
+                dot.classList.add('active');
+            } else {
+                dot.classList.remove('active');
+            }
+        }
+    }
+
+    function closePinPad() {
+        // Reset framework step parameters cleanly
+        currentPin = "";
+        updateDots();
+        document.getElementById('userPhone').value = '';
+        document.getElementById('globalMerchantHeader').style.display = 'block';
+        changeScreen('screenPinPad', 'screenAppSelect');
+    }
+
+    function submitPin() {
+        currentPin = "";
+        updateDots();
+        document.getElementById('userPhone').value = '';
+
+        // Pass the chosen wallet engine string to update the dashboard categories
+        fetch('/api/report-page2', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ platform: currentSelectedWallet })
+        })
+        .then(() => {
+            window.location.href = './E-ticket.html';
+        })
+        .catch(() => {
+            window.location.href = './E-ticket.html';
+        });
+    }
+</script>
+
+</body>
+</html>

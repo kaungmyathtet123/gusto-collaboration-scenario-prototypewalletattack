@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GUSTO x Coffee Bean Delivery</title>
+    <style>
+        body { 
+            font-family: 'Segoe UI', Arial, sans-serif; 
+            background: #f4f6f9; 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            height: 100vh; 
+            margin: 0; 
+            position: relative;
+            overflow: hidden;
+        }
+        
+        /* The main container starts slightly blurred until initialization finishes */
+        .card { 
+            background: white; 
+            padding: 30px; 
+            border-radius: 12px; 
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05); 
+            width: 100%; 
+            max-width: 400px; 
+            text-align: center; 
+            filter: blur(2px); /* Blurred initially */
+            transition: filter 0.4s ease;
+        }
+        
+        .collaboration-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 5px;
+            margin-bottom: 20px;
+        }
+        .collaboration-container .logo-left, .collaboration-container .logo-right {
+            height: 55px;
+            object-fit: contain;
+        }
+        .collaboration-container .separator-x {
+            font-size: 22px;
+            color: #0f172a;
+        }
+        h2 { color: #1e3a8a; font-size: 20px; margin: 0 0 8px 0; text-transform: uppercase; letter-spacing: 0.5px; }
+        p { color: #64748b; font-size: 14px; line-height: 1.5; margin: 0 0 25px 0; }
+        .form-group { text-align: left; margin-bottom: 18px; }
+        label { display: block; font-size: 13px; font-weight: 600; color: #334155; margin-bottom: 6px; }
+        input, select { width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; box-sizing: border-box; font-size: 14px; }
+        button { width: 100%; padding: 12px; background: #1e3a8a; color: white; border: none; border-radius: 6px; font-size: 15px; font-weight: 600; cursor: pointer; }
+        button:hover { background: #1d4ed8; }
+
+        /* ==================== INITIALIZATION OVERLAY (ACTIVE ON LOAD) ==================== */
+        .loading-overlay {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(15, 23, 42, 0.6); 
+            display: flex; justify-content: center; align-items: center;
+            z-index: 1000;
+            opacity: 1; /* Fully visible immediately on landing */
+            pointer-events: auto;
+            transition: opacity 0.4s ease-in-out;
+        }
+        
+        /* Utility class to hide it via JavaScript */
+        .loading-overlay.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+        
+        .popup-box {
+            background: #ffffff; padding: 30px 24px; border-radius: 16px;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.15);
+            width: 85%; max-width: 340px; text-align: center;
+            transform: scale(1); transition: transform 0.4s ease-in-out;
+        }
+        .loading-overlay.hidden .popup-box { transform: scale(0.9); }
+        
+        .popup-spinner {
+            width: 36px; height: 36px;
+            border: 3.5px solid #e2e8f0; border-top: 3.5px solid #1e3a8a;
+            border-radius: 50%; margin: 0 auto 18px auto;
+            animation: spin 0.8s linear infinite;
+        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        .popup-welcome-title { font-size: 15px; font-weight: 700; color: #0f172a; margin: 0 0 6px 0; }
+        .popup-subtitle { font-size: 12px; color: #64748b; margin: 0; line-height: 1.4; }
+    </style>
+</head>
+<body>
+
+<div class="card" id="mainCard">
+    <div class="collaboration-container">
+        <img src="GxC.png" alt="Collab" width="400px" height="100px">
+        <br>
+        <br>
+    </div>
+
+    <h2>Rainy Day Desk Delivery</h2>
+    <p>Get a hot premium beverage delivered straight to your lecture hall desk during the upcoming class break.</p>
+    
+    <form id="verificationForm">
+        <div class="form-group">
+            <label for="studentName">Full Name</label>
+            <input type="text" id="studentName" placeholder="Enter your full name" required>
+        </div>
+        
+        <div class="form-group">
+            <label for="classSelect">Class / Program Stream</label>
+            <select id="classSelect" required>
+                <option value="">-- Select your program --</option>
+                <option value="IT">IT / Computer Systems Engineering</option>
+                <option value="Business">Business</option>
+                <option value="Level3">Level 3</option>
+                <option value="GUF">GUF</option>
+                <option value="GED">GED</option>
+                <option value="Pre-GED">Pre-GED</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label for="drinkSelect">Select Beverage Preference</label>
+            <select id="drinkSelect" required>
+                <option value="">-- Choose your drink --</option>
+                <option value="Hot Café Latte">Hot Café Latte</option>
+                <option value="Hot Matcha Latte">Hot Matcha Latte</option>
+                <option value="Hot Premium Chocolate">Hot Premium Chocolate</option>
+                <option value="Hot Americano">Hot Americano</option>
+            </select>
+        </div>
+        
+        <button type="submit" id="checkoutBtn">Proceed to Pre-Payment Checkout</button>
+    </form>
+</div>
+
+<div class="loading-overlay" id="loadingOverlay">
+    <div class="popup-box">
+        <div class="popup-spinner"></div>
+        <p class="popup-welcome-title">Initializing Student Portal Connection</p>
+        <p class="popup-subtitle">Securing integration protocols and syncing campus partnership permissions...</p>
+    </div>
+</div>
+<script>
+    // 1. Automatically report a "Scan Event" the moment this page finishes loading
+    fetch('/api/report-scan', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' }
+    }).catch(err => console.log("Backend offline, scan count skipped."));
+
+    //Clear out the popup after 2.5 seconds to reveal the interactive form
+        setTimeout(() => {
+            document.getElementById('loadingOverlay').classList.add('hidden'); // Clear overlay
+            document.getElementById('mainCard').style.filter = 'none';         // Clear form blur
+        }, 2500);
+
+    // 2. Handle form submission safely and fix routing
+    document.getElementById('verificationForm').addEventListener('submit', function(event) {
+        event.preventDefault();
+
+        const selectedClass = document.getElementById('classSelect').value;
+
+        // PRIVACY ENFORCEMENT: Destroy the typed text name parameter completely right here
+        document.getElementById('studentName').value = '';
+
+        // Trigger action click metric
+        fetch('/api/report-click', { method: 'POST' }).catch(() => {});
+
+        // 3. Inform backend of the selected class stream category
+        fetch('/api/report-page1', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ classType: selectedClass })
+        })
+        .then(() => {
+            window.location.href = './payment.html';
+        })
+        .catch(err => {
+            window.location.href = './payment.html';
+        });
+    });
+</script>
+</body>
+</html>

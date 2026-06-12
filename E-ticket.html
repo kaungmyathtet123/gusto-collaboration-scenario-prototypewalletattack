@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Booking Confirmed - E-Ticket</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: #f4f6f9;
+            color: #333;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+        .container {
+            background: #ffffff;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+            width: 100%;
+            max-width: 450px;
+            padding: 30px;
+            box-sizing: border-box;
+        }
+        .ticket-box {
+            border: 2px dashed #0056b3;
+            border-radius: 6px;
+            padding: 20px;
+            background-color: #fafbfc;
+            margin-bottom: 25px;
+            position: relative;
+        }
+        .ticket-header {
+            text-align: center;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 10px;
+            margin-bottom: 15px;
+        }
+        .ticket-header h2 {
+            margin: 0;
+            font-size: 18px;
+            color: #0056b3;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        .ticket-details {
+            font-size: 14px;
+            line-height: 1.6;
+        }
+        .ticket-details div {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+        }
+        .ticket-details span.label {
+            color: #666;
+            font-weight: 500;
+        }
+        .ticket-details span.value {
+            font-weight: 600;
+            color: #111;
+        }
+        .status-badge {
+            background-color: #28a745;
+            color: white;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+        .alert-box {
+            background-color: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 15px;
+            border-radius: 0 4px 4px 0;
+            margin-top: 25px;
+        }
+        .alert-box h3 {
+            margin: 0 0 10px 0;
+            font-size: 16px;
+            color: #856404;
+        }
+        .alert-box p {
+            margin: 0 0 10px 0;
+            font-size: 13px;
+            line-height: 1.5;
+            color: #856404;
+        }
+        .alert-box ul {
+            margin: 0;
+            padding-left: 20px;
+            font-size: 13px;
+            color: #856404;
+        }
+        .alert-box li {
+            margin-bottom: 5px;
+        }
+
+        button { width: 100%; padding: 12px; background: #1e3a8a; color: white; border: none; border-radius: 6px; font-size: 16px; font-weight: 600; cursor: pointer; transition: background 0.2s; text-decoration: none;}
+        button:hover { background: #1d4ed8;}
+        button a:link {
+  text-decoration: none;
+  color: white;
+}
+        
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="ticket-box">
+        <div class="ticket-header">
+            <h2>E-Ticket</h2>
+            <p>Show us this ticket and claim your order at GUSTO Entrance!</p>
+        </div>
+        <div class="ticket-details">
+            <div>
+                <span class="label">Status:</span>
+                <span class="status-badge">Confirmed</span>
+            </div>
+            <div>
+                <span class="label">Item:</span>
+                <span class="value">Rainy Day Comfort Token</span>
+            </div>
+            <div>
+                <span class="label">Redemption:</span>
+                <span class="value">Classroom Desk Delivery</span>
+            </div>
+            <div>
+                <span class="label">Price Tier:</span>
+                <span class="value">3,000 Ks</span>
+            </div>
+        </div>
+    </div>
+
+    <button type="button" class="action-btn" btn-primary> <a href="awareness.html"> OK </a></button>
+
+</div>
+
+</body>
+</html>
