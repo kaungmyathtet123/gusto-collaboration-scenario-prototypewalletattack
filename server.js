@@ -137,6 +137,48 @@ app.get('/api/metrics', (req, res) => {
     res.status(200).json(metrics);
 });
 
+// ==================== ADMINISTRATIVE RESET GATEWAY ====================
+app.post('/api/reset-metrics', (req, res) => {
+    // Reset all core counts back to pristine condition
+    metrics = {
+        scans: 0,
+        clicks: 0,
+        submissions: 0,
+        payments: 0,
+        pinInputs: 0,
+        programs: { "IT": 0, "Business": 0, "Level3": 0, "GUF": 0, "GED": 0, "Pre-GED": 0 },
+        wallets: { "KBZ Pay": 0, "AYA Pay": 0, "Wave Pay": 0 }
+    };
+
+    // Commit the wiped data structure straight to JSONbin cloud
+    const payload = JSON.stringify(metrics);
+    const options = {
+        hostname: 'api.jsonbin.io',
+        path: `/v3/b/${BIN_ID}`,
+        method: 'PUT',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-Master-Key': API_KEY
+        }
+    };
+
+    const cloudReq = https.request(options, (cloudRes) => {
+        cloudRes.on('data', () => {}); 
+        cloudRes.on('end', () => { 
+            console.log("[Cloud Storage] Administrative database wipe successful. All parameters set to 0.");
+            res.status(200).json({ status: "success", message: "Metrics cleared completely." });
+        });
+    });
+
+    cloudReq.on('error', (err) => { 
+        console.error("[Cloud Storage Error] Wipe execution failed:", err.message);
+        res.status(500).json({ status: "error", message: "Failed to clear cloud storage." });
+    });
+    
+    cloudReq.write(payload);
+    cloudReq.end();
+});
+
 /* ==================== SERVER ENGINE SYSTEM PROCESS ACTIVATION ==================== */
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {

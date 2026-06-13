@@ -293,17 +293,17 @@
             <p class="breakdown-title">Program Types Breakdown</p>
             <div class="data-item"><span class="data-label">IT / Systems Engineering</span><span class="data-badge" id="prog-IT">0</span></div>
             <div class="data-item"><span class="data-label">Business Support</span><span class="data-badge" id="prog-Business">0</span></div>
-            <div class="data-item"><span class="data-label">Level 3 Streams</span><span class="data-badge" id="prog-Level3">0</span></div>
+            <div class="data-item"><span class="data-label">Level 3 Foundation</span><span class="data-badge" id="prog-Level3">0</span></div>
             <div class="data-item"><span class="data-label">GUF Foundations</span><span class="data-badge" id="prog-GUF">0</span></div>
             <div class="data-item"><span class="data-label">GED Program</span><span class="data-badge" id="prog-GED">0</span></div>
-            <div class="data-item"><span class="data-label">Pre-GED Stream</span><span class="data-badge" id="prog-PreGED">0</span></div>
+            <div class="data-item"><span class="data-label">Pre-GED Program</span><span class="data-badge" id="prog-PreGED">0</span></div>
         </div>
 
         <div class="breakdown-card">
             <p class="breakdown-title">Payment App Selection</p>
-            <div class="data-item"><span class="data-label">KBZ Pay Gateway</span><span class="data-badge" id="wallet-KBZ">0</span></div>
-            <div class="data-item"><span class="data-label">AYA Pay Gateway</span><span class="data-badge" id="wallet-AYA">0</span></div>
-            <div class="data-item"><span class="data-label">Wave Pay Gateway</span><span class="data-badge" id="wallet-Wave">0</span></div>
+            <div class="data-item"><span class="data-label">KBZ Pay </span><span class="data-badge" id="wallet-KBZ">0</span></div>
+            <div class="data-item"><span class="data-label">AYA Pay </span><span class="data-badge" id="wallet-AYA">0</span></div>
+            <div class="data-item"><span class="data-label">Wave Pay</span><span class="data-badge" id="wallet-Wave">0</span></div>
         </div>
     </div>
 
@@ -314,6 +314,12 @@
         </div>
         <div>Server Stream: Locked</div>
     </div>
+
+    <div style="margin: 20px 0; text-align: right;">
+    <button id="resetBtn" style="background-color: #dc3545; color: white; border: none; padding: 10px 20px; border-radius: 5px; font-weight: bold; cursor: pointer; transition: 0.2s;">
+        ⚠️ Reset Simulation Data
+    </button>
+</div>
 
 </div>
 
@@ -390,6 +396,31 @@
                 }
             });
     }
+    
+    document.getElementById('resetBtn').addEventListener('click', function() {
+    // A secondary verification modal to ensure you don't accidentally press it
+    if (confirm("Are you absolutely sure you want to clear all campus testing records? This cannot be undone.")) {
+        
+        fetch('/api/reset-metrics', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === "success") {
+                alert("Database cleared successfully! Refreshing dashboard statistics.");
+                // Instantly reloads the page to show all zeros
+                window.location.reload(); 
+            } else {
+                alert("Wipe operation rejected by server pipeline: " + data.message);
+            }
+        })
+        .catch(error => {
+            console.error("Error executing database flush:", error);
+            alert("Network connection error encountered while contacting server api.");
+        });
+    }
+});
 </script>
 
 </body>
