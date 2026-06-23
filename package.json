@@ -1,23 +1,14 @@
 {
-  "name": "gusto-socialengineeringattack",
+  "name": "gusto-campaign-simulation",
   "version": "1.0.0",
-  "description": "Campus Security Awareness with  Simulation Server",
+  "description": "Campus Security Awareness with Simulation Server",
   "main": "server.js",
   "engines": {
     "node": ">=18.0.0"
   },
   "scripts": {
-    "start": "node server.js",
-    "test": "echo \"Error: no test specified\" && exit 0"
+    "start": "node server.js"
   },
-  "keywords": [
-    "express",
-    "jsonbin",
-    "analytics",
-    "simulation"
-  ],
-  "author": "GUSTO Student Developer",
-  "license": "ISC",
   "dependencies": {
     "express": "^4.21.2"
   }

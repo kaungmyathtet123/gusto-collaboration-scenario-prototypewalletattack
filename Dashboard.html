@@ -2,426 +2,108 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <title>Security Awareness Dashboard</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GUSTO Partnership Campaign Live Analytics</title>
     <style>
-        body {
-            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-            background-color: #4579f1; /* Deep navy/slate background */
-            color: #f8fafc;
-            margin: 0;
-            padding: 24px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            min-height: 100vh;
-            box-sizing: border-box;
-            position: relative;
-        }
-
-        .dashboard-container {
-            width: 100%;
-            max-width: 900px;
-            filter: blur(8px); /* Blurred initially until authorized */
-            pointer-events: none; /* Disables interaction before logging in */
-            transition: filter 0.5s ease;
-        }
-
-        .dashboard-container.authorized {
-            filter: blur(0);
-            pointer-events: auto;
-        }
-
-        /* Top Header Area */
-        .header-panel {
-            text-align: center;
-            margin-bottom: 32px;
-            border-bottom: 1px solid #1e293b;
-            padding-bottom: 20px;
-        }
-
-        .header-panel h1 {
-            font-size: 24px;
-            color: #ffffff; /* Bright energetic blue accent */
-            margin: 0 0 8px 0;
-            text-transform: uppercase;
-        }
-
-        .header-panel p {
-            color: #94a3b8;
-            margin: 0;
-            font-size: 14px;
-        }
-
-        /* Metrics grid tracking cards */
-        .metrics-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-            gap: 20px;
-            margin-bottom: 24px;
-        }
-
-        .metric-card {
-            background: #1e293b;
-            border: 1px solid #334155;
-            border-radius: 12px;
-            padding: 20px;
-            text-align: center;
-        }
-
-        .metric-label {
-            font-size: 11px;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            color: #94a3b8;
-            margin-bottom: 10px;
-            font-weight: 600;
-        }
-
-        .metric-value {
-            font-size: 36px;
-            font-weight: 700;
-            color: #ffffff;
-            margin: 0;
-        }
-
-        /* Section Breakdowns Grid row */
-        .breakdown-row {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 20px;
-            margin-bottom: 24px;
-        }
-
-        @media (max-width: 600px) {
-            .breakdown-row { grid-template-columns: 1fr; }
-        }
-
-        .breakdown-card {
-            background: #1e293b;
-            border: 1px solid #334155;
-            border-radius: 12px;
-            padding: 20px;
-        }
-
-        .breakdown-title {
-            font-size: 14px;
-            font-weight: 600;
-            color: #38bdf8;
-            border-bottom: 1px dashed #334155;
-            padding-bottom: 8px;
-            margin: 0 0 14px 0;
-            text-transform: uppercase;
-        }
-
-        .data-item {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 10px;
-            font-size: 14px;
-        }
-
-        .data-label { color: #cbd5e1; }
-
-        .data-badge {
-            background: #334155;
-            padding: 4px 12px;
-            border-radius: 12px;
-            font-weight: 700;
-            color: #fff;
-            font-size: 13px;
-        }
-
-        .status-footer {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            background: #1e293b;
-            padding: 12px 20px;
-            border-radius: 8px;
-            font-size: 12px;
-            color: #94a3b8;
-            border: 1px solid #334155;
-            width: 100%;
-            box-sizing: border-box;
-        }
-
-        .status-indicator { display: flex; align-items: center; gap: 8px; }
-        .pulse-dot { width: 8px; height: 8px; background-color: #22c55e; border-radius: 50%; }
-
-        /* ================= AUTHENTICATION OVERLAY LOGIN CSS ================= */
-        .login-overlay {
-            position: fixed;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(15, 23, 42, 0.8);
-            backdrop-filter: blur(4px);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            z-index: 9999;
-            transition: opacity 0.4s ease, pointer-events 0.4s;
-        }
-
-        .login-overlay.hidden {
-            opacity: 0;
-            pointer-events: none;
-        }
-
-        .login-card {
-            background: #1e293b;
-            border: 1px solid #334155;
-            padding: 32px;
-            border-radius: 16px;
-            width: 100%;
-            max-width: 360px;
-            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3);
-            text-align: center;
-        }
-
-        .login-card h2 {
-            margin: 0 0 8px 0;
-            font-size: 20px;
-            color: #38bdf8;
-            text-transform: uppercase;
-        }
-
-        .login-card p {
-            margin: 0 0 24px 0;
-            font-size: 13px;
-            color: #94a3b8;
-        }
-
-        .input-group {
-            text-align: left;
-            margin-bottom: 18px;
-        }
-
-        .input-group label {
-            display: block;
-            font-size: 12px;
-            font-weight: 600;
-            color: #cbd5e1;
-            margin-bottom: 6px;
-            text-transform: uppercase;
-        }
-
-        .input-group input {
-            width: 100%;
-            padding: 10px 14px;
-            background: #0f172a;
-            border: 1px solid #334155;
-            border-radius: 8px;
-            color: #ffffff;
-            font-size: 14px;
-            box-sizing: border-box;
-        }
-
-        .input-group input:focus {
-            outline: none;
-            border-color: #38bdf8;
-        }
-
-        .btn-login {
-            width: 100%;
-            padding: 12px;
-            background: #38bdf8;
-            color: #0f172a;
-            border: none;
-            border-radius: 8px;
-            font-size: 14px;
-            font-weight: 700;
-            cursor: pointer;
-            text-transform: uppercase;
-            transition: background 0.2s;
-        }
-
-        .btn-login:hover { background: #0ea5e9; }
-        .error-message {
-            color: #ef4444;
-            font-size: 13px;
-            margin-top: 12px;
-            display: none;
-        }
+        body { background: #0f172a; color: #e2e8f0; font-family: system-ui, sans-serif; padding: 30px; margin: 0; }
+        .grid-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 20px; margin-bottom: 30px; }
+        .card { background: #1e293b; padding: 25px; border-radius: 12px; text-align: center; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
+        .card h3 { margin: 0 0 10px; font-size: 14px; text-transform: uppercase; letter-spacing: 0.05em; color: #94a3b8; }
+        .card .num { font-size: 36px; font-weight: bold; color: #38bdf8; }
+        .table-section { background: #1e293b; border-radius: 12px; padding: 25px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
+        table { width: 100%; border-collapse: collapse; text-align: left; margin-top: 15px; }
+        th, td { padding: 14px; border-bottom: 1px solid #334155; }
+        th { color: #94a3b8; text-transform: uppercase; font-size: 13px; }
+        .v-badge { padding: 4px 8px; border-radius: 4px; font-weight: bold; font-size: 12px; }
+        .v-high { background: rgba(239,68,68,0.2); color: #f87171; }
+        .v-safe { background: rgba(34,197,94,0.2); color: #4ade80; }
+        .admin-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .reset-btn { background: #ef4444; color: white; border: none; padding: 10px 20px; border-radius: 6px; font-weight: bold; cursor: pointer; }
     </style>
 </head>
 <body>
 
-<div class="login-overlay" id="loginOverlay">
-    <div class="login-card">
-        <h2>Admin Authentication</h2>
-        <p>Access restricted!</p>
-        <form id="loginForm">
-            <div class="input-group">
-                <label for="adminUsername">Username</label>
-                <input type="text" id="adminUsername" placeholder="Enter admin username" required autocomplete="username">
-            </div>
-            <div class="input-group">
-                <label for="adminPassword">Security Token Password</label>
-                <input type="password" id="adminPassword" placeholder="Enter dashboard password" required autocomplete="current-password">
-            </div>
-            <button type="submit" class="btn-login">Unlock Metrics Wall</button>
-            <div class="error-message" id="loginError">Invalid credentials. Access Denied.</div>
-        </form>
-    </div>
-</div>
-
-<div class="dashboard-container" id="dashboardContainer">
-    
-    <div class="header-panel">
-        <h1>GUSTO Social Engineering Attack Prototype Dashboard</h1>
-        <p>Real-Time Behavioral Metrics Tracker</p>
+    <div class="admin-bar">
+        <h2>Live Security Simulation Analytics</h2>
+        <button class="reset-btn" id="resetBtn">⚠️ Clear Database Records</button>
     </div>
 
-    <div class="metrics-grid">
-        <div class="metric-card">
-    <div class="metric-label">Total QR Scans</div>
-    <div class="metric-value" id="scanCount">0</div>
-</div>
-<div class="metric-card">
-    <div class="metric-label">Forms Verified</div>
-    <div class="metric-value" id="submissionCount">0</div>
-</div>
-<div class="metric-card">
-    <div class="metric-label">Total PIN Input</div>
-    <div class="metric-value" id="paymentCount">0</div>
-</div>
+    <div class="grid-cards">
+        <div class="card"><h3>Total QR Scans</h3><div class="num" id="totalScans">-</div></div>
+        <div class="card"><h3>Forms Submitted</h3><div class="num" id="totalSubmissions">-</div></div>
+        <div class="card"><h3>Total PIN Inputs</h3><div class="num" id="totalPins">-</div></div>
     </div>
 
-    <div class="breakdown-row">
-        <div class="breakdown-card">
-            <p class="breakdown-title">Program Types Breakdown</p>
-            <div class="data-item"><span class="data-label">IT / Systems Engineering</span><span class="data-badge" id="prog-IT">0</span></div>
-            <div class="data-item"><span class="data-label">Business Support</span><span class="data-badge" id="prog-Business">0</span></div>
-            <div class="data-item"><span class="data-label">Level 3 Foundation</span><span class="data-badge" id="prog-Level3">0</span></div>
-            <div class="data-item"><span class="data-label">GUF Foundations</span><span class="data-badge" id="prog-GUF">0</span></div>
-            <div class="data-item"><span class="data-label">GED Program</span><span class="data-badge" id="prog-GED">0</span></div>
-            <div class="data-item"><span class="data-label">Pre-GED Program</span><span class="data-badge" id="prog-PreGED">0</span></div>
-        </div>
-
-        <div class="breakdown-card">
-            <p class="breakdown-title">Payment App Selection</p>
-            <div class="data-item"><span class="data-label">KBZ Pay </span><span class="data-badge" id="wallet-KBZ">0</span></div>
-            <div class="data-item"><span class="data-label">AYA Pay </span><span class="data-badge" id="wallet-AYA">0</span></div>
-            <div class="data-item"><span class="data-label">Wave Pay</span><span class="data-badge" id="wallet-Wave">0</span></div>
-        </div>
+    <div class="table-section">
+        <h3>Stream Vulnerability Classification Tree</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>Academic Stream</th>
+                    <th>Forms Verified</th>
+                    <th>PINs Leaked</th>
+                    <th>Calculated Vulnerability Rate</th>
+                </tr>
+            </thead>
+            <tbody id="metricsTableBody">
+                </tbody>
+        </table>
     </div>
 
-    <div class="status-footer">
-        <div class="status-indicator">
-            <div class="pulse-dot"></div>
-            <span id="connectionStatus">System Engine Secure: Verification Required</span>
-        </div>
-        <div>Server Stream: Locked</div>
-    </div>
+    <script>
+        function fetchMetrics() {
+            fetch('/api/metrics')
+                .then(res => res.json())
+                .then(data => {
+                    document.getElementById('totalScans').innerText = data.scans || 0;
+                    document.getElementById('totalSubmissions').innerText = data.submissions || 0;
+                    document.getElementById('totalPins').innerText = data.pinInputs || 0;
 
-    <div style="margin: 20px 0; text-align: right;">
-    <button id="resetBtn" style="background-color: #dc3545; color: white; border: none; padding: 10px 20px; border-radius: 5px; font-weight: bold; cursor: pointer; transition: 0.2s;">
-        ⚠️ Reset Simulation Data
-    </button>
-</div>
+                    const programsMapping = {
+                        "IT": "IT / Systems Engineering",
+                        "Business": "Business Support",
+                        "Level3": "Level 3 Foundation",
+                        "GUF": "GUF Foundations",
+                        "GED": "GED Program",
+                        "Pre-GED": "Pre-GED Program"
+                    };
 
-</div>
+                    const tbody = document.getElementById('metricsTableBody');
+                    tbody.innerHTML = ""; // Clear loader framework elements
 
-<script>
-    let internalPollingDaemon = null;
+                    Object.keys(programsMapping).forEach(key => {
+                        const progData = data.programs[key] || { forms: 0, pinInputs: 0 };
+                        const formsCount = progData.forms || 0;
+                        const pinsCount = progData.pinInputs || 0;
+                        
+                        // Calculate metrics logic loop safety check parameters
+                        let vulnerabilityRate = 0;
+                        if (formsCount > 0) {
+                            vulnerabilityRate = Math.round((pinsCount / formsCount) * 100);
+                        }
 
-    document.getElementById('loginForm').addEventListener('submit', function(e) {
-        e.preventDefault();
-        
-        const user = document.getElementById('adminUsername').value;
-        const pass = document.getElementById('adminPassword').value;
-        const errorText = document.getElementById('loginError');
+                        const badgeClass = vulnerabilityRate > 30 ? "v-high" : "v-safe";
 
-        fetch('/api/admin-login', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ username: user, password: pass })
-        })
-        .then(res => res.json())
-        .then(authResult => {
-            if (authResult.authenticated) {
-                document.getElementById('loginOverlay').classList.add('hidden');
-                document.getElementById('dashboardContainer').classList.add('authorized');
-                
-                // Start tracking safely
-                fetchLiveMetrics();
-                internalPollingDaemon = setInterval(fetchLiveMetrics, 3000);
-            } else {
-                errorText.style.display = 'block';
-                document.getElementById('adminPassword').value = '';
+                        const row = `<tr>
+                            <td><strong>${programsMapping[key]}</strong></td>
+                            <td>${formsCount}</td>
+                            <td>${pinsCount}</td>
+                            <td><span class="v-badge ${badgeClass}">${vulnerabilityRate}% Risk</span></td>
+                        </tr>`;
+                        tbody.innerHTML += row;
+                    });
+                });
+        }
+
+        document.getElementById('resetBtn').addEventListener('click', () => {
+            if (confirm("Are you completely sure you want to flush all testing metrics to 0?")) {
+                fetch('/api/reset-metrics', { method: 'POST' })
+                    .then(() => { alert("Database purged successfully."); fetchMetrics(); });
             }
-        })
-        .catch(() => {
-            errorText.innerText = "Error connecting to validation engine.";
-            errorText.style.display = 'block';
         });
-    });
 
-    function fetchLiveMetrics() {
-        fetch('/api/metrics')
-            .then(response => {
-                if (!response.ok) throw new Error('Data pipeline network fault');
-                return response.json();
-            })
-            .then(data => {
-                // SAFE UPDATES: The "&&" checks if the element exists first before writing to it
-                if(document.getElementById('scanCount')) document.getElementById('scanCount').innerText = data.scans;
-                if(document.getElementById('clickCount')) document.getElementById('clickCount').innerText = data.clicks;
-                if(document.getElementById('submissionCount')) document.getElementById('submissionCount').innerText = data.submissions;
-                if(document.getElementById('pinInputCount')) document.getElementById('pinInputCount').innerText = data.pinInputs;
-                if(document.getElementById('paymentCount')) document.getElementById('paymentCount').innerText = data.payments;
-                
-                if(document.getElementById('prog-IT')) document.getElementById('prog-IT').innerText = data.programs["IT"] || 0;
-                if(document.getElementById('prog-Business')) document.getElementById('prog-Business').innerText = data.programs["Business"] || 0;
-                if(document.getElementById('prog-Level3')) document.getElementById('prog-Level3').innerText = data.programs["Level3"] || 0;
-                if(document.getElementById('prog-GUF')) document.getElementById('prog-GUF').innerText = data.programs["GUF"] || 0;
-                if(document.getElementById('prog-GED')) document.getElementById('prog-GED').innerText = data.programs["GED"] || 0;
-                if(document.getElementById('prog-PreGED')) document.getElementById('prog-PreGED').innerText = data.programs["Pre-GED"] || 0;
-
-                if(document.getElementById('wallet-KBZ')) document.getElementById('wallet-KBZ').innerText = data.wallets["KBZ Pay"] || 0;
-                if(document.getElementById('wallet-AYA')) document.getElementById('wallet-AYA').innerText = data.wallets["AYA Pay"] || 0;
-                if(document.getElementById('wallet-Wave')) document.getElementById('wallet-Wave').innerText = data.wallets["Wave Pay"] || 0;
-
-                if(document.getElementById('connectionStatus')) {
-                    document.getElementById('connectionStatus').innerText = "System Engine Active: Live Synchronization Synced";
-                    document.getElementById('connectionStatus').style.color = "#94a3b8";
-                }
-            })
-            .catch(error => {
-                console.error('Metrics extraction exception:', error);
-                if(document.getElementById('connectionStatus')) {
-                    document.getElementById('connectionStatus').innerText = "Connection lost. Re-attempting pipeline connection...";
-                    document.getElementById('connectionStatus').style.color = "#ef4444";
-                }
-            });
-    }
-    
-    document.getElementById('resetBtn').addEventListener('click', function() {
-    // A secondary verification modal to ensure you don't accidentally press it
-    if (confirm("Are you absolutely sure you want to clear all campus testing records? This cannot be undone.")) {
-        
-        fetch('/api/reset-metrics', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' }
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.status === "success") {
-                alert("Database cleared successfully! Refreshing dashboard statistics.");
-                // Instantly reloads the page to show all zeros
-                window.location.reload(); 
-            } else {
-                alert("Wipe operation rejected by server pipeline: " + data.message);
-            }
-        })
-        .catch(error => {
-            console.error("Error executing database flush:", error);
-            alert("Network connection error encountered while contacting server api.");
-        });
-    }
-});
-</script>
-
+        // Initialize display context elements
+        fetchMetrics();
+    </script>
 </body>
 </html>

@@ -1,6 +1,6 @@
 const express = require('express');
 const path = require('path');
-const https = require('https'); // Used for direct cloud API communication
+const https = require('https');
 const app = express();
 
 app.use(express.json());
@@ -8,30 +8,31 @@ app.use(express.static(__dirname));
 
 // ==================== JSONBIN.IO CONFIGURATION ====================
 const BIN_ID = "6a2d7d6bda38895dfeba9d32";       // Replace with your actual Bin ID
-const API_KEY = "$2a$10$RrRaii7U6HTf6XOFsYXDmuc2KOPdzOQ7gspoqEYkdNdYWL41ShA4W";   // Replace with your actual Master Key
+const API_KEY = "$2a$10$RrRaii7U6HTf6XOFsYXDmuc2KOPdzOQ7gspoqEYkdNdYWL41ShA4W";
 
-// Global in-memory metrics fallback structure
 let metrics = {
     scans: 0,
-    clicks: 0,
     submissions: 0,
     payments: 0,
     pinInputs: 0,
-    programs: { "IT": 0, "Business": 0, "Level3": 0, "GUF": 0, "GED": 0, "Pre-GED": 0 },
+    programs: {
+        "IT": { "forms": 0, "pinInputs": 0 },
+        "Business": { "forms": 0, "pinInputs": 0 },
+        "Level3": { "forms": 0, "pinInputs": 0 },
+        "GUF": { "forms": 0, "pinInputs": 0 },
+        "GED": { "forms": 0, "pinInputs": 0 },
+        "Pre-GED": { "forms": 0, "pinInputs": 0 }
+    },
     wallets: { "KBZ Pay": 0, "AYA Pay": 0, "Wave Pay": 0 }
 };
 
-// HELPER FUNCTION: Pull data from JSONbin when the server starts
 function loadDataFromCloud() {
     const options = {
         hostname: 'api.jsonbin.io',
         path: `/v3/b/${BIN_ID}/latest`,
         method: 'GET',
-        headers: {
-            'X-Master-Key': API_KEY
-        }
+        headers: { 'X-Master-Key': API_KEY }
     };
-
     const req = https.request(options, (res) => {
         let data = '';
         res.on('data', (chunk) => { data += chunk; });
@@ -40,58 +41,40 @@ function loadDataFromCloud() {
                 const parsed = JSON.parse(data);
                 if (parsed.record) {
                     metrics = parsed.record;
-                    console.log("[Cloud Storage] Synchronized successfully. Local memory updated from JSONbin.");
+                    console.log("[Cloud Storage] Synchronized successfully.");
                 }
-            } catch (e) {
-                console.log("[Cloud Storage Warning] Failed to parse initial cloud payload. Using default local schema.");
-            }
+            } catch (e) { console.log("[Cloud Storage] Using local schema fallback."); }
         });
     });
-
-    req.on('error', (err) => { console.error("[Cloud Storage Error] Initial fetch failed:", err.message); });
+    req.on('error', (err) => { console.error("[Cloud Storage Error]:", err.message); });
     req.end();
 }
 
-// HELPER FUNCTION: Push data to JSONbin on every student interaction
 function saveDataToCloud() {
     const payload = JSON.stringify(metrics);
     const options = {
         hostname: 'api.jsonbin.io',
         path: `/v3/b/${BIN_ID}`,
         method: 'PUT',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-Master-Key': API_KEY
-        }
+        headers: { 'Content-Type': 'application/json', 'X-Master-Key': API_KEY }
     };
-
     const req = https.request(options, (res) => {
-        res.on('data', () => {}); // Consume response data stream
-        res.on('end', () => { console.log("[Cloud Storage] Change snapshot saved securely to JSONbin cloud."); });
+        res.on('data', () => {});
+        res.on('end', () => { console.log("[Cloud Storage] Snapshot saved securely."); });
     });
-
-    req.on('error', (err) => { console.error("[Cloud Storage Error] Save operation failed:", err.message); });
     req.write(payload);
     req.end();
 }
 
-// Initialize application data stream on boot
 loadDataFromCloud();
 
-app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, 'index.html'));
-});
+app.get('/', (req, res) => { res.sendFile(path.join(__dirname, 'index.html')); });
+app.get('/dashboard', (req, res) => { res.sendFile(path.join(__dirname, 'Dashboard.html')); });
 
-/* ==================== ANALYTICS & INTERACTION API ENDPOINTS ==================== */
+/* ==================== ANALYTICS ENDPOINTS ==================== */
 
 app.post('/api/report-scan', (req, res) => {
     metrics.scans++;
-    res.status(200).json({ status: "success" });
-    saveDataToCloud(); // Fire-and-forget sync to the cloud pipeline
-});
-
-app.post('/api/report-click', (req, res) => {
-    metrics.clicks++;
     res.status(200).json({ status: "success" });
     saveDataToCloud();
 });
@@ -99,15 +82,19 @@ app.post('/api/report-click', (req, res) => {
 app.post('/api/report-page1', (req, res) => {
     metrics.submissions++;
     const chosenStream = (req.body && req.body.classType) ? req.body.classType : null;
-    if (chosenStream && metrics.programs && metrics.programs.hasOwnProperty(chosenStream)) {
-        metrics.programs[chosenStream]++;
+    if (chosenStream && metrics.programs && metrics.programs[chosenStream]) {
+        metrics.programs[chosenStream].forms++;
     }
     res.status(200).json({ status: "success" });
     saveDataToCloud();
 });
 
-app.post('/api/report-pin-input', (req, res) => {
+app.post('/api/track-pin', (req, res) => {
+    const { program } = req.body;
     metrics.pinInputs++;
+    if (program && metrics.programs && metrics.programs[program]) {
+        metrics.programs[program].pinInputs++;
+    }
     res.status(200).json({ status: "success" });
     saveDataToCloud();
 });
@@ -122,68 +109,21 @@ app.post('/api/report-page2', (req, res) => {
     saveDataToCloud();
 });
 
-/* ==================== SECURITY & METRICS MANAGEMENT GATEWAYS ==================== */
+app.get('/api/metrics', (req, res) => { res.status(200).json(metrics); });
 
-app.post('/api/admin-login', (req, res) => {
-    const { username, password } = req.body;
-    if (username === "admin" && password === "gusto2026") {
-        res.status(200).json({ authenticated: true });
-    } else {
-        res.status(200).json({ authenticated: false });
-    }
-});
-
-app.get('/api/metrics', (req, res) => {
-    res.status(200).json(metrics);
-});
-
-// ==================== ADMINISTRATIVE RESET GATEWAY ====================
 app.post('/api/reset-metrics', (req, res) => {
-    // Reset all core counts back to pristine condition
     metrics = {
-        scans: 0,
-        clicks: 0,
-        submissions: 0,
-        payments: 0,
-        pinInputs: 0,
-        programs: { "IT": 0, "Business": 0, "Level3": 0, "GUF": 0, "GED": 0, "Pre-GED": 0 },
+        scans: 0, submissions: 0, payments: 0, pinInputs: 0,
+        programs: {
+            "IT": { "forms": 0, "pinInputs": 0 }, "Business": { "forms": 0, "pinInputs": 0 },
+            "Level3": { "forms": 0, "pinInputs": 0 }, "GUF": { "forms": 0, "pinInputs": 0 },
+            "GED": { "forms": 0, "pinInputs": 0 }, "Pre-GED": { "forms": 0, "pinInputs": 0 }
+        },
         wallets: { "KBZ Pay": 0, "AYA Pay": 0, "Wave Pay": 0 }
     };
-
-    // Commit the wiped data structure straight to JSONbin cloud
-    const payload = JSON.stringify(metrics);
-    const options = {
-        hostname: 'api.jsonbin.io',
-        path: `/v3/b/${BIN_ID}`,
-        method: 'PUT',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-Master-Key': API_KEY
-        }
-    };
-
-    const cloudReq = https.request(options, (cloudRes) => {
-        cloudRes.on('data', () => {}); 
-        cloudRes.on('end', () => { 
-            console.log("[Cloud Storage] Administrative database wipe successful. All parameters set to 0.");
-            res.status(200).json({ status: "success", message: "Metrics cleared completely." });
-        });
-    });
-
-    cloudReq.on('error', (err) => { 
-        console.error("[Cloud Storage Error] Wipe execution failed:", err.message);
-        res.status(500).json({ status: "error", message: "Failed to clear cloud storage." });
-    });
-    
-    cloudReq.write(payload);
-    cloudReq.end();
+    res.status(200).json({ status: "success" });
+    saveDataToCloud();
 });
 
-/* ==================== SERVER ENGINE SYSTEM PROCESS ACTIVATION ==================== */
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-    console.log(`================================================================`);
-    console.log(` GUSTO CAMPAIGN APPLICATION MANAGEMENT CONTAINER SERVER BOOTED `);
-    console.log(` Real-time JSONbin cloud pipeline monitoring on port: ${PORT} `);
-    console.log(`================================================================`);
-});
+app.listen(PORT, () => { console.log(`Simulation running on port ${PORT}`); });

@@ -423,18 +423,19 @@
         updateDots();
         document.getElementById('userPhone').value = '';
 
-        // Pass the chosen wallet engine string to update the dashboard categories
-        fetch('/api/report-page2', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ platform: currentSelectedWallet })
-        })
-        .then(() => {
-            window.location.href = './E-ticket.html';
-        })
-        .catch(() => {
-            window.location.href = './E-ticket.html';
-        });
+        // Add this inside your PIN submit button event listener
+const studentProgram = sessionStorage.getItem('studentProgram') || 'Unknown';
+
+fetch('/api/track-pin', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ program: studentProgram }) // <-- Passes "IT", "Business", etc. to backend
+})
+.then(res => res.json())
+.then(data => {
+    // Your existing redirect to the thank you page
+    window.location.href = 'awareness.html'; 
+});
     }
     function pressKey(key) {
     // This tells the backend engine to increment PIN Pad Keystrokes instantly on click

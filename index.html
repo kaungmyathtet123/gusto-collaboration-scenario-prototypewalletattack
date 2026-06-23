@@ -159,6 +159,9 @@
     // 2. Handle form submission safely and fix routing
     document.getElementById('verificationForm').addEventListener('submit', function(event) {
         event.preventDefault();
+        // Add this where you handle your first form submit button click
+const selectedProgram = document.getElementById('programSelect').value; 
+sessionStorage.setItem('studentProgram', selectedProgram); // Saves locally in browser memory
 
         const selectedClass = document.getElementById('classSelect').value;
 
@@ -167,6 +170,7 @@
 
         // Trigger action click metric
         fetch('/api/report-click', { method: 'POST' }).catch(() => {});
+
 
         // 3. Inform backend of the selected class stream category
         fetch('/api/report-page1', {
