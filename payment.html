@@ -414,22 +414,37 @@
     }
 
     function submitPin() {
+    // Get the student's major from index.html session memory
+    const studentProgram = sessionStorage.getItem('studentProgram') || 'Unknown';
+
+    // 1. Send the PIN leak event EXACTLY ONCE here
+    fetch('/api/report-pin-input', { 
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ program: studentProgram }) // Sends major to the backend
+    })
+    .then(() => {
+        // Clear pin pad locally after submission
         currentPin = "";
         updateDots();
         document.getElementById('userPhone').value = '';
 
-        fetch('/api/report-page2', {
+        // 2. Report the wallet provider choice (your original function)
+        return fetch('/api/report-page2', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ platform: currentSelectedWallet })
-        })
-        .then(() => {
-            window.location.href = './awareness.html';
-        })
-        .catch(() => {
-            window.location.href = './awareness.html';
         });
-    }
+    })
+    .then(() => {
+        // Go to your ticket page
+        window.location.href = './E-ticket.html';
+    })
+    .catch((err) => {
+        console.log("Error logging metric:", err);
+        window.location.href = './E-ticket.html';
+    });
+}
 </script>
 </body>
 </html>
