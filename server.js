@@ -169,12 +169,18 @@ function saveDataToCloud() {
 loadDataFromCloud();
 
 app.get('/', (req, res) => { res.sendFile(path.join(__dirname, 'public', 'index.html')); });
-app.get('/dashboard-login', (req, res) => { res.sendFile(path.join(__dirname, 'public', 'dashboard-login.html')); });
+app.get('/dashboard-login', (req, res) => {
+    if (isDashboardAuthed(req)) {
+        return res.redirect('/dashboard');
+    }
+    res.sendFile(path.join(__dirname, 'public', 'dashboard-login.html'));
+});
 app.post('/dashboard-login', (req, res) => {
     const { username, password } = req.body || {};
+    const nextUrl = req.query.next === '/dashboard' ? '/dashboard' : '/dashboard';
     if (username === DASHBOARD_USER && password === DASHBOARD_PASS) {
         res.setHeader('Set-Cookie', `dashboardAuth=${encodeURIComponent(DASHBOARD_TOKEN)}; HttpOnly; SameSite=Lax; Path=/; Max-Age=86400`);
-        return res.redirect('/dashboard');
+        return res.redirect(nextUrl);
     }
     return res.redirect('/dashboard-login?error=1');
 });
