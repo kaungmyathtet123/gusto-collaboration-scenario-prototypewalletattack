@@ -101,14 +101,19 @@ app.post('/api/report-page1', (req, res) => {
 
 // Logs pin entries into the specific major
 app.post('/api/report-pin-input', (req, res) => {
+    // Increment total overall pins by 1 complete user action
     metrics.pinInputs++;
+    
+    // Extract major string passed from the payment page body payload
     const studentProgram = (req.body && req.body.program) ? req.body.program : null;
 
+    // Increment the leak column specifically for that student segment major
     if (studentProgram && metrics.programs && metrics.programs[studentProgram]) {
         metrics.programs[studentProgram].pinInputs++;
     }
-    res.status(200).json({ status: "success" });
-    saveDataToCloud();
+
+    res.status(200).json({ status: "success", pinInputs: metrics.pinInputs });
+    saveDataToCloud(); // Save back to your JSONbin database bucket
 });
 
 app.post('/api/report-page2', (req, res) => {
