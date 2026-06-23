@@ -144,10 +144,16 @@
     </div>
 </div>
 <script>
-    fetch('/api/report-scan', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' }
-    }).catch(err => console.log("Backend offline, scan count skipped."));
+    if (!sessionStorage.getItem('scanReported')) {
+        sessionStorage.setItem('scanReported', '1');
+        fetch('/api/report-scan', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' }
+        }).catch(err => {
+            sessionStorage.removeItem('scanReported');
+            console.log("Backend offline, scan count skipped.");
+        });
+    }
 
     setTimeout(() => {
         document.getElementById('loadingOverlay').classList.add('hidden');
