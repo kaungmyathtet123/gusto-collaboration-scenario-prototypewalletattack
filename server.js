@@ -28,6 +28,33 @@ let metrics = {
     wallets: { "KBZ Pay": 0, "AYA Pay": 0, "Wave Pay": 0 }
 };
 
+// Array to keep track of open dashboard browser tabs
+let clients = [];
+
+app.get('/api/metrics-stream', (req, res) => {
+    // Establish standard SSE headers to keep the connection open permanently
+    res.setHeader('Content-Type', 'text/event-stream');
+    res.setHeader('Cache-Control', 'no-cache');
+    res.setHeader('Connection', 'keep-alive');
+    res.flushHeaders();
+
+    // Store this client connection
+    clients.push(res);
+
+    // If the browser tab closes, remove it from our active tracking array
+    req.on('close', () => {
+        clients = clients.filter(client => client !== res);
+    });
+});
+
+// Helper function to broadcast changes to all open dashboards instantly
+function broadcastMetrics() {
+    const dataString = JSON.stringify(metrics);
+    clients.forEach(client => {
+        client.write(`data: ${dataString}\n\n`);
+    });
+}
+
 function loadDataFromCloud() {
     const options = {
         hostname: 'api.jsonbin.io',
@@ -101,19 +128,14 @@ app.post('/api/report-page1', (req, res) => {
 
 // Logs pin entries into the specific major
 app.post('/api/report-pin-input', (req, res) => {
-    // Increment total overall pins by 1 complete user action
     metrics.pinInputs++;
-    
-    // Extract major string passed from the payment page body payload
     const studentProgram = (req.body && req.body.program) ? req.body.program : null;
 
-    // Increment the leak column specifically for that student segment major
     if (studentProgram && metrics.programs && metrics.programs[studentProgram]) {
         metrics.programs[studentProgram].pinInputs++;
     }
-
-    res.status(200).json({ status: "success", pinInputs: metrics.pinInputs });
-    saveDataToCloud(); // Save back to your JSONbin database bucket
+    res.status(200).json({ status: "success" });
+    saveDataToCloud();
 });
 
 app.post('/api/report-page2', (req, res) => {

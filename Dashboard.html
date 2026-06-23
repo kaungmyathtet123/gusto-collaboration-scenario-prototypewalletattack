@@ -32,25 +32,6 @@
         <div class="card"><h3>Total QR Scans</h3><div class="num" id="totalScans">-</div></div>
         <div class="card"><h3>Forms Submitted</h3><div class="num" id="totalSubmissions">-</div></div>
         <div class="card"><h3>Total PIN Inputs</h3><div class="num" id="totalPins">-</div></div>
-
-        <div class="table-section" style="margin-top: 25px;">
-    <h3>Digital Wallet Entry Vectors</h3>
-    <div style="display: flex; gap: 20px; justify-content: space-around; padding: 15px 0;">
-        <div style="text-align: center;">
-            <div style="font-size: 14px; color: #94a3b8; text-transform: uppercase;">KBZ Pay</div>
-            <div style="font-size: 28px; font-weight: bold; color: #10b981;" id="kbzCount">0</div>
-        </div>
-        <div style="text-align: center;">
-            <div style="font-size: 14px; color: #94a3b8; text-transform: uppercase;">AYA Pay</div>
-            <div style="font-size: 28px; font-weight: bold; color: #3b82f6;" id="ayaCount">0</div>
-        </div>
-        <div style="text-align: center;">
-            <div style="font-size: 14px; color: #94a3b8; text-transform: uppercase;">Wave Pay</div>
-            <div style="font-size: 28px; font-weight: bold; color: #f59e0b;" id="waveCount">0</div>
-        </div>
-    </div>
-</div>
-        
     </div>
 
     <div class="table-section">
@@ -123,6 +104,16 @@
 
         // Initialize display context elements
         fetchMetrics();
+
+        const eventSource = new EventSource('/api/metrics-stream');
+
+eventSource.onmessage = function(event) {
+    // Parse the live data payload pushed directly by the server
+    const data = JSON.parse(event.data);
+    
+    // Update your dashboard DOM elements immediately here
+    document.getElementById('totalScans').innerText = data.scans || 0;
+};
     </script>
 </body>
 </html>
