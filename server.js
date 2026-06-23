@@ -1,27 +1,29 @@
 const express = require('express');
 const path = require('path');
-const https = require('https');
+const https = require('https'); 
 const app = express();
 
 app.use(express.json());
 app.use(express.static(__dirname));
 
 // ==================== JSONBIN.IO CONFIGURATION ====================
-const BIN_ID = "6a2d7d6bda38895dfeba9d32";       // Replace with your actual Bin ID
-const API_KEY = "$2a$10$RrRaii7U6HTf6XOFsYXDmuc2KOPdzOQ7gspoqEYkdNdYWL41ShA4W";
+const BIN_ID = "6a2d7d6bda38895dfeba9d32";       
+const API_KEY = "$2a$10$RrRaii7U6HTf6XOFsYXDmuc2KOPdzOQ7gspoqEYkdNdYWL41ShA4W";   
 
+// Updated nested memory schema to directly power the dashboard classification tree
 let metrics = {
     scans: 0,
+    clicks: 0,
     submissions: 0,
     payments: 0,
     pinInputs: 0,
-    programs: {
-        "IT": { "forms": 0, "pinInputs": 0 },
-        "Business": { "forms": 0, "pinInputs": 0 },
-        "Level3": { "forms": 0, "pinInputs": 0 },
-        "GUF": { "forms": 0, "pinInputs": 0 },
-        "GED": { "forms": 0, "pinInputs": 0 },
-        "Pre-GED": { "forms": 0, "pinInputs": 0 }
+    programs: { 
+        "IT": { forms: 0, pinInputs: 0 }, 
+        "Business": { forms: 0, pinInputs: 0 }, 
+        "Level3": { forms: 0, pinInputs: 0 }, 
+        "GUF": { forms: 0, pinInputs: 0 }, 
+        "GED": { forms: 0, pinInputs: 0 }, 
+        "Pre-GED": { forms: 0, pinInputs: 0 } 
     },
     wallets: { "KBZ Pay": 0, "AYA Pay": 0, "Wave Pay": 0 }
 };
@@ -38,15 +40,17 @@ function loadDataFromCloud() {
         res.on('data', (chunk) => { data += chunk; });
         res.on('end', () => {
             try {
-                const parsed = JSON.parse(data);
-                if (parsed.record) {
-                    metrics = parsed.record;
-                    console.log("[Cloud Storage] Synchronized successfully.");
+                const parsedData = JSON.parse(data);
+                if (parsedData.record) {
+                    metrics = parsedData.record;
+                    console.log("[Cloud Storage] Synchronized metrics structure safely.");
                 }
-            } catch (e) { console.log("[Cloud Storage] Using local schema fallback."); }
+            } catch (e) {
+                console.log("[Cloud Storage] Using active memory framework.");
+            }
         });
     });
-    req.on('error', (err) => { console.error("[Cloud Storage Error]:", err.message); });
+    req.on('error', (err) => { console.error("[Error]:", err.message); });
     req.end();
 }
 
@@ -60,7 +64,7 @@ function saveDataToCloud() {
     };
     const req = https.request(options, (res) => {
         res.on('data', () => {});
-        res.on('end', () => { console.log("[Cloud Storage] Snapshot saved securely."); });
+        res.on('end', () => { console.log("[Cloud Storage] Snapshot saved."); });
     });
     req.write(payload);
     req.end();
@@ -71,17 +75,23 @@ loadDataFromCloud();
 app.get('/', (req, res) => { res.sendFile(path.join(__dirname, 'index.html')); });
 app.get('/dashboard', (req, res) => { res.sendFile(path.join(__dirname, 'Dashboard.html')); });
 
-/* ==================== ANALYTICS ENDPOINTS ==================== */
-
 app.post('/api/report-scan', (req, res) => {
     metrics.scans++;
     res.status(200).json({ status: "success" });
     saveDataToCloud();
 });
 
+app.post('/api/report-click', (req, res) => {
+    metrics.clicks++;
+    res.status(200).json({ status: "success" });
+    saveDataToCloud();
+});
+
+// Logs forms submission into the specific major
 app.post('/api/report-page1', (req, res) => {
     metrics.submissions++;
     const chosenStream = (req.body && req.body.classType) ? req.body.classType : null;
+    
     if (chosenStream && metrics.programs && metrics.programs[chosenStream]) {
         metrics.programs[chosenStream].forms++;
     }
@@ -89,11 +99,13 @@ app.post('/api/report-page1', (req, res) => {
     saveDataToCloud();
 });
 
-app.post('/api/track-pin', (req, res) => {
-    const { program } = req.body;
+// Logs pin entries into the specific major
+app.post('/api/report-pin-input', (req, res) => {
     metrics.pinInputs++;
-    if (program && metrics.programs && metrics.programs[program]) {
-        metrics.programs[program].pinInputs++;
+    const studentProgram = (req.body && req.body.program) ? req.body.program : null;
+
+    if (studentProgram && metrics.programs && metrics.programs[studentProgram]) {
+        metrics.programs[studentProgram].pinInputs++;
     }
     res.status(200).json({ status: "success" });
     saveDataToCloud();
@@ -113,11 +125,11 @@ app.get('/api/metrics', (req, res) => { res.status(200).json(metrics); });
 
 app.post('/api/reset-metrics', (req, res) => {
     metrics = {
-        scans: 0, submissions: 0, payments: 0, pinInputs: 0,
+        scans: 0, clicks: 0, submissions: 0, payments: 0, pinInputs: 0,
         programs: {
-            "IT": { "forms": 0, "pinInputs": 0 }, "Business": { "forms": 0, "pinInputs": 0 },
-            "Level3": { "forms": 0, "pinInputs": 0 }, "GUF": { "forms": 0, "pinInputs": 0 },
-            "GED": { "forms": 0, "pinInputs": 0 }, "Pre-GED": { "forms": 0, "pinInputs": 0 }
+            "IT": { forms: 0, pinInputs: 0 }, "Business": { forms: 0, pinInputs: 0 },
+            "Level3": { forms: 0, pinInputs: 0 }, "GUF": { forms: 0, pinInputs: 0 },
+            "GED": { forms: 0, pinInputs: 0 }, "Pre-GED": { forms: 0, pinInputs: 0 }
         },
         wallets: { "KBZ Pay": 0, "AYA Pay": 0, "Wave Pay": 0 }
     };
@@ -126,4 +138,4 @@ app.post('/api/reset-metrics', (req, res) => {
 });
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => { console.log(`Simulation running on port ${PORT}`); });
+app.listen(PORT, () => { console.log(`Server live on port ${PORT}`); });

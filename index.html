@@ -144,46 +144,34 @@
     </div>
 </div>
 <script>
-    // 1. Automatically report a "Scan Event" the moment this page finishes loading
     fetch('/api/report-scan', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' }
     }).catch(err => console.log("Backend offline, scan count skipped."));
 
-    //Clear out the popup after 2.5 seconds to reveal the interactive form
-        setTimeout(() => {
-            document.getElementById('loadingOverlay').classList.add('hidden'); // Clear overlay
-            document.getElementById('mainCard').style.filter = 'none';         // Clear form blur
-        }, 2500);
+    setTimeout(() => {
+        document.getElementById('loadingOverlay').classList.add('hidden');
+        document.getElementById('mainCard').style.filter = 'none';
+    }, 2500);
 
-    // 2. Handle form submission safely and fix routing
     document.getElementById('verificationForm').addEventListener('submit', function(event) {
         event.preventDefault();
-        // Add this where you handle your first form submit button click
-const selectedProgram = document.getElementById('programSelect').value; 
-sessionStorage.setItem('studentProgram', selectedProgram); // Saves locally in browser memory
 
         const selectedClass = document.getElementById('classSelect').value;
 
-        // PRIVACY ENFORCEMENT: Destroy the typed text name parameter completely right here
-        document.getElementById('studentName').value = '';
+        // Save selection to local session storage so the payment page can access it
+        sessionStorage.setItem('studentProgram', selectedClass);
 
-        // Trigger action click metric
+        document.getElementById('studentName').value = '';
         fetch('/api/report-click', { method: 'POST' }).catch(() => {});
 
-
-        // 3. Inform backend of the selected class stream category
         fetch('/api/report-page1', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ classType: selectedClass })
         })
-        .then(() => {
-            window.location.href = './payment.html';
-        })
-        .catch(err => {
-            window.location.href = './payment.html';
-        });
+        .then(() => { window.location.href = './payment.html'; })
+        .catch(err => { window.location.href = './payment.html'; });
     });
 </script>
 </body>

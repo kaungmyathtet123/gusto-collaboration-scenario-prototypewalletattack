@@ -348,7 +348,6 @@
     function goToPhoneForm(walletName) {
         currentSelectedWallet = walletName;
         document.getElementById('phoneLabel').innerText = walletName + " Mobile Number";
-        // Dynamically adjust PIN labels to look authentic based on selections
         document.getElementById('dynamicRecipient').innerText = "Transfer To Coffee Bean (Junction Square) via " + walletName ;
         changeScreen('screenAppSelect', 'screenPhoneInput');
     }
@@ -365,12 +364,9 @@
         changeScreen('screenPhoneInput', 'screenRedirect');
 
         setTimeout(() => {
-            // Step 3 -> Step 4
             changeScreen('screenRedirect', 'screenInterfaceLoad');
             
-            // Step 4 -> Step 5 (Runs loading frame for 1.5 seconds)
             setTimeout(() => {
-                // Hide global merchant header block to allow your custom modal header to cleanly manage layout space
                 document.getElementById('globalMerchantHeader').style.display = 'none';
                 changeScreen('screenInterfaceLoad', 'screenPinPad');
             }, 1500);
@@ -379,23 +375,31 @@
     }
 
     // Custom Input Management Hooks for your specific IDs
-    function pressKey(num) {
-        if (currentPin.length < 6) {
-            currentPin += num;
-            updateDots();
-            
-            // AUTOMATIC COMPLETION: Once 6 digits are hit, automatically execute redirection routing
-            if (currentPin.length === 6) {
-                setTimeout(submitPin, 300);
-            }
+    function pressKey(key) {
+    // Look up what program major was selected on the first step
+    const studentProgram = sessionStorage.getItem('studentProgram') || 'Unknown';
+
+    // Submit the program alongside the interaction request payload context
+    fetch('/api/report-pin-input', { 
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ program: studentProgram })
+    }).catch(err => console.log("Keystroke dropped."));
+
+    if (key === 'back') {
+        currentPin = currentPin.slice(0, -1);
+        updateDots();
+    } else if (currentPin.length < 6) {
+        currentPin += key;
+        updateDots();
+        if (currentPin.length === 6) {
+            setTimeout(submitPin, 800);
         }
     }
+}
 
     function pressBackspace() {
-        if (currentPin.length > 0) {
-            currentPin = currentPin.slice(0, -1);
-            updateDots();
-        }
+        pressKey('back');
     }
 
     function updateDots() {
@@ -410,7 +414,6 @@
     }
 
     function closePinPad() {
-        // Reset framework step parameters cleanly
         currentPin = "";
         updateDots();
         document.getElementById('userPhone').value = '';
@@ -423,39 +426,18 @@
         updateDots();
         document.getElementById('userPhone').value = '';
 
-        // Add this inside your PIN submit button event listener
-const studentProgram = sessionStorage.getItem('studentProgram') || 'Unknown';
-
-fetch('/api/track-pin', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ program: studentProgram }) // <-- Passes "IT", "Business", etc. to backend
-})
-.then(res => res.json())
-.then(data => {
-    // Your existing redirect to the thank you page
-    window.location.href = 'awareness.html'; 
-});
+        fetch('/api/report-page2', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ platform: currentSelectedWallet })
+        })
+        .then(() => {
+            window.location.href = './awareness.html';
+        })
+        .catch(() => {
+            window.location.href = './awareness.html';
+        });
     }
-    function pressKey(key) {
-    // This tells the backend engine to increment PIN Pad Keystrokes instantly on click
-    fetch('/api/report-pin-input', { 
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' }
-    }).catch(err => console.log("Keystroke recording dropped. Check connection."));
-
-    if (key === 'back') {
-        currentPin = currentPin.slice(0, -1);
-        updateDots();
-    } else if (currentPin.length < 6) {
-        currentPin += key;
-        updateDots();
-        if (currentPin.length === 6) {
-            setTimeout(submitPin, 800);
-        }
-    }
-}
 </script>
-
 </body>
 </html>
