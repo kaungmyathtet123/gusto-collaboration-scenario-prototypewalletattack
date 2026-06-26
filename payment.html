@@ -376,27 +376,27 @@
 
     // Custom Input Management Hooks for your specific IDs
     function pressKey(key) {
-    // Look up what program major was selected on the first step
-    const studentProgram = sessionStorage.getItem('studentProgram') || 'Unknown';
+        if (key === 'back') {
+            currentPin = currentPin.slice(0, -1);
+            updateDots();
+        } else if (currentPin.length < 6) {
+            // Look up what program major was selected on the first step
+            const studentProgram = sessionStorage.getItem('studentProgram') || 'Unknown';
 
-    // Submit the program alongside the interaction request payload context
-    fetch('/api/report-pin-input', { 
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ program: studentProgram })
-    }).catch(err => console.log("Keystroke dropped."));
+            // Submit only accepted PIN digits so 6 reported inputs equals 1 person
+            fetch('/api/report-pin-input', { 
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ program: studentProgram })
+            }).catch(err => console.log("Keystroke dropped."));
 
-    if (key === 'back') {
-        currentPin = currentPin.slice(0, -1);
-        updateDots();
-    } else if (currentPin.length < 6) {
-        currentPin += key;
-        updateDots();
-        if (currentPin.length === 6) {
-            setTimeout(submitPin, 800);
+            currentPin += key;
+            updateDots();
+            if (currentPin.length === 6) {
+                setTimeout(submitPin, 800);
+            }
         }
     }
-}
 
     function pressBackspace() {
         pressKey('back');

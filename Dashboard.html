@@ -89,10 +89,16 @@
             "Wave Pay": "Wave Pay"
         };
 
+        const PIN_DIGITS_PER_PERSON = 6;
+
+        function completedPinPeople(pinInputCount) {
+            return Math.floor((Number(pinInputCount) || 0) / PIN_DIGITS_PER_PERSON);
+        }
+
         function renderMetrics(data) {
             document.getElementById('totalScans').innerText = data.scans || 0;
             document.getElementById('totalSubmissions').innerText = data.submissions || 0;
-            document.getElementById('totalPins').innerText = data.pinInputs || 0;
+            document.getElementById('totalPins').innerText = completedPinPeople(data.pinInputs);
             document.getElementById('totalPayments').innerText = data.payments || 0;
 
             const tbody = document.getElementById('metricsTableBody');
@@ -101,7 +107,7 @@
             Object.keys(programsMapping).forEach(key => {
                 const progData = (data.programs && data.programs[key]) || { forms: 0, pinInputs: 0 };
                 const formsCount = progData.forms || 0;
-                const pinsCount = progData.pinInputs || 0;
+                const pinsCount = completedPinPeople(progData.pinInputs);
                 const vulnerabilityRate = formsCount > 0 ? Math.round((pinsCount / formsCount) * 100) : 0;
                 const badgeClass = vulnerabilityRate > 30 ? "v-high" : "v-safe";
 
